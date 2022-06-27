@@ -58,7 +58,7 @@ func main() {
 	Info := &registry.Info{
 		ServiceName: "polaris.routing.echo",
 		Tags: map[string]string{
-			"namespace": Namespace,
+			polaris.NameSpaceKey: Namespace,
 		},
 	}
 	newServer := hello.NewServer(

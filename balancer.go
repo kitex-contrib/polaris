@@ -24,7 +24,6 @@ import (
 	"github.com/cloudwego/kitex/pkg/discovery"
 	"github.com/cloudwego/kitex/pkg/loadbalance"
 	polarisgo "github.com/polarismesh/polaris-go"
-	"github.com/polarismesh/polaris-go/api"
 	"github.com/polarismesh/polaris-go/pkg/config"
 	"github.com/polarismesh/polaris-go/pkg/log"
 	"github.com/polarismesh/polaris-go/pkg/model"
@@ -48,20 +47,18 @@ type polarisPicker struct {
 }
 
 func (pp *polarisPicker) Next(ctx context.Context, request interface{}) (ins discovery.Instance) {
-	svcInfo := model.ServiceInfo{
-		Service:   pp.info.serviceName,
-		Namespace: pp.info.namespace,
-		// 目标服务的metadata，用于规则路由
-		Metadata: pp.info.polarisOptions.DstMetadata,
-	}
-
-	routerRequest := &polarisgo.ProcessRoutersRequest{}
-	routerRequest.DstInstances = model.NewDefaultServiceInstances(svcInfo, pp.info.polarisInstances)
-	routerRequest.SourceService.Service = pp.info.polarisOptions.SrcService
-	routerRequest.SourceService.Namespace = pp.info.polarisOptions.SrcNamespace
-	routerRequest.SourceService.Metadata = pp.info.polarisOptions.SrcMetadata
-
 	if pp.routerInstancesResp == nil {
+		routerRequest := &polarisgo.ProcessRoutersRequest{}
+		svcInfo := model.ServiceInfo{
+			Service:   pp.info.serviceName,
+			Namespace: pp.info.namespace,
+			Metadata:  pp.info.polarisOptions.DstMetadata,
+		}
+		routerRequest.DstInstances = model.NewDefaultServiceInstances(svcInfo, pp.info.polarisInstances)
+		routerRequest.SourceService.Service = pp.info.polarisOptions.SrcService
+		routerRequest.SourceService.Namespace = pp.info.polarisOptions.SrcNamespace
+		routerRequest.SourceService.Metadata = pp.info.polarisOptions.SrcMetadata
+
 		routerInstancesResp, err := pp.routerAPI.ProcessRouters(routerRequest)
 		if nil != err {
 			log.GetBaseLogger().Errorf("fail to do ProcessRouters err:%+v", err)
@@ -82,11 +79,8 @@ func (pp *polarisPicker) Next(ctx context.Context, request interface{}) (ins dis
 	}
 
 	targetInstance := oneInstResp.GetInstance()
-
-	instanceKey := GetInstanceKey(targetInstance.GetNamespace(), targetInstance.GetService(), targetInstance.GetHost(), strconv.Itoa(int(targetInstance.GetPort())))
-
-	// todo 没找到咋办
-	ins = pp.info.polarisInstanceKeyKitexInstanceMap[instanceKey]
+	addr := targetInstance.GetHost() + ":" + strconv.Itoa(int(targetInstance.GetPort()))
+	ins = pp.info.polarisInstanceMapKitexInstance[addr]
 
 	return ins
 }
@@ -106,10 +100,8 @@ func (pp *polarisPicker) zero() {
 type polarisBalancer struct {
 	cachedPolarisInfo sync.Map
 	sfg               singleflight.Group
-	consumerAPI       api.ConsumerAPI
 	routerAPI         polarisgo.RouterAPI
-
-	polarisInstances []model.Instance
+	polarisInstances  []model.Instance
 }
 
 func NewPolarisBalancer(configFile ...string) (loadbalance.Loadbalancer, error) {
@@ -119,20 +111,18 @@ func NewPolarisBalancer(configFile ...string) (loadbalance.Loadbalancer, error) 
 	}
 
 	pb := &polarisBalancer{
-		consumerAPI: api.NewConsumerAPIByContext(sdkCtx),
-		routerAPI:   polarisgo.NewRouterAPIByContext(sdkCtx),
+		routerAPI: polarisgo.NewRouterAPIByContext(sdkCtx),
 	}
 
 	return pb, nil
 }
 
 type polarisInfo struct {
-	namespace                          string
-	serviceName                        string
-	kitexInstances                     []discovery.Instance
-	polarisInstanceKeyKitexInstanceMap map[string]discovery.Instance
-	polarisInstances                   []model.Instance
-	polarisOptions                     Options
+	namespace                       string
+	serviceName                     string
+	polarisInstanceMapKitexInstance map[string]discovery.Instance
+	polarisInstances                []model.Instance
+	polarisOptions                  ClientOptions
 }
 
 func (pb *polarisBalancer) GetPicker(e discovery.Result) loadbalance.Picker {
@@ -180,9 +170,8 @@ func (pb *polarisBalancer) Delete(change discovery.Change) {
 
 func (pb *polarisBalancer) newPolarisInfo(e discovery.Result) *polarisInfo {
 	pi := &polarisInfo{
-		kitexInstances:                     make([]discovery.Instance, 0, len(e.Instances)),
-		polarisInstances:                   make([]model.Instance, 0, len(e.Instances)),
-		polarisInstanceKeyKitexInstanceMap: make(map[string]discovery.Instance, 0),
+		polarisInstances:                make([]model.Instance, 0, len(e.Instances)),
+		polarisInstanceMapKitexInstance: make(map[string]discovery.Instance, 0),
 	}
 	for _, kitexInst := range e.Instances {
 		pkInst, ok := kitexInst.(*polarisKitexInstance)
@@ -191,10 +180,8 @@ func (pb *polarisBalancer) newPolarisInfo(e discovery.Result) *polarisInfo {
 		}
 		pi.polarisOptions = pkInst.polarisOptions
 		pi.polarisInstances = append(pi.polarisInstances, pkInst.polarisInstance)
-		pi.kitexInstances = append(pi.kitexInstances, kitexInst)
-
-		instanceKey := GetInstanceKey(pkInst.polarisInstance.GetNamespace(), pkInst.polarisInstance.GetService(), pkInst.polarisInstance.GetHost(), strconv.Itoa(int(pkInst.polarisInstance.GetPort())))
-		pi.polarisInstanceKeyKitexInstanceMap[instanceKey] = kitexInst
+		addr := pkInst.polarisInstance.GetHost() + ":" + strconv.Itoa(int(pkInst.polarisInstance.GetPort()))
+		pi.polarisInstanceMapKitexInstance[addr] = kitexInst
 	}
 
 	namespace, serviceName := SplitCachedKey(e.CacheKey)

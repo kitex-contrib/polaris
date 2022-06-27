@@ -35,16 +35,26 @@ const (
 )
 
 func main() {
-	o := polaris.Options{
-		DstNamespace: Namespace,
-	}
-	r, err := polaris.NewPolarisResolverV2(o)
+	o := polaris.ClientOptions{}
+	r, err := polaris.NewPolarisResolver(o)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	pb, err := polaris.NewPolarisBalancer()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	suite := &polaris.ClientSuite{
+		DstNameSpace:       Namespace,
+		Resolver:           r,
+		Balancer:           pb,
+		ReportCallResultMW: polaris.NewUpdateServiceCallResultMW(),
+	}
+
 	newClient := hello.MustNewClient("polaris.quickstart.echo",
-		client.WithResolver(r),
+		client.WithSuite(suite),
 		client.WithRPCTimeout(time.Second*360),
 	)
 

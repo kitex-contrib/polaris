@@ -36,7 +36,9 @@ func TestPolarisResolver(t *testing.T) {
 	so := ServerOptions{}
 	rg, err := NewPolarisRegistry(so)
 	require.Nil(t, err)
-	rs, err := NewPolarisResolver()
+
+	co := ClientOptions{}
+	rs, err := NewPolarisResolver(co)
 	require.Nil(t, err)
 
 	// test register service
@@ -54,7 +56,7 @@ func TestPolarisResolver(t *testing.T) {
 	require.Nil(t, err)
 	expected := discovery.Result{
 		Cacheable: true,
-		CacheKey:  polarisDefaultNamespace + ":" + serviceName,
+		CacheKey:  DefaultPolarisNamespace + ":" + serviceName,
 		Instances: []discovery.Instance{
 			discovery.NewInstance(InstanceOne.Addr.Network(), InstanceOne.Addr.String(), InstanceOne.Weight, map[string]string{
 				"namespace": "default",
@@ -98,6 +100,7 @@ func TestPolarisResolver(t *testing.T) {
 }
 
 func TestEmptyEndpoints(t *testing.T) {
-	_, err := NewPolarisResolver()
+	co := ClientOptions{}
+	_, err := NewPolarisResolver(co)
 	require.Nil(t, err)
 }

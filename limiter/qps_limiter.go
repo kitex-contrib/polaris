@@ -71,5 +71,5 @@ func (p *qpsLimiter) Acquire(ctx context.Context) bool {
 }
 
 func (p *qpsLimiter) Status(ctx context.Context) (max, current int, interval time.Duration) {
-	return
+	panic("not implemented")
 }

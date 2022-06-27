@@ -187,9 +187,9 @@ func createRegisterParam(info *registry.Info, so ServerOptions) (*api.InstanceRe
 	}
 	protocol := info.Addr.Network()
 
-	namespace, ok := info.Tags["namespace"]
+	namespace, ok := info.Tags[NameSpaceKey]
 	if !ok {
-		namespace = polarisDefaultNamespace
+		namespace = DefaultPolarisNamespace
 	}
 	instanceKey := GetInstanceKey(namespace, info.ServiceName, instanceHost, strconv.Itoa(instancePort))
 
@@ -220,7 +220,7 @@ func createDeregisterParam(info *registry.Info) (*api.InstanceDeRegisterRequest,
 
 	namespace, ok := info.Tags["namespace"]
 	if !ok {
-		namespace = polarisDefaultNamespace
+		namespace = DefaultPolarisNamespace
 	}
 
 	instanceKey := GetInstanceKey(namespace, info.ServiceName, instanceHost, strconv.Itoa(instancePort))

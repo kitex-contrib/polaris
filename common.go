@@ -34,6 +34,15 @@ var (
 	mutexPolarisContext sync.Mutex
 )
 
+const (
+	RetSuccessCode          = 0
+	RetFailCode             = -1
+	NameSpaceKey            = "namespace"
+	InstanceIDKey           = "instance_id"
+	DefaultPolarisNamespace = "default"
+	DstNameSpaceTagKey      = "dst_namespace"
+)
+
 // GetPolarisConfig get polaris config from endpoints.
 func GetPolarisConfig(configFile ...string) (api.SDKContext, error) {
 	mutexPolarisContext.Lock()
@@ -80,7 +89,7 @@ func SplitCachedKey(cachedKey string) (string, string) {
 }
 
 // ChangePolarisInstanceToKitex transforms polaris instance to Kitex instance.
-func ChangePolarisInstanceToKitex(PolarisInstance model.Instance) *polarisKitexInstance {
+func ChangePolarisInstanceToKitex(PolarisInstance model.Instance, polarisOptions ClientOptions) *polarisKitexInstance {
 	weight := PolarisInstance.GetWeight()
 	if weight <= 0 {
 		weight = DefaultWeight
@@ -88,31 +97,8 @@ func ChangePolarisInstanceToKitex(PolarisInstance model.Instance) *polarisKitexI
 	addr := PolarisInstance.GetHost() + ":" + strconv.Itoa(int(PolarisInstance.GetPort()))
 
 	tags := map[string]string{
-		"namespace":  PolarisInstance.GetNamespace(),
-		"instanceId": PolarisInstance.GetId(),
-	}
-
-	kitexInstance := &polarisKitexInstance{
-		kitexInstance:   discovery.NewInstance(PolarisInstance.GetProtocol(), addr, weight, tags),
-		polarisInstance: PolarisInstance,
-	}
-
-	// kitexInstance := discovery.NewInstance(PolarisInstance.GetProtocol(), addr, weight, tags)
-	// In KitexInstance , tags can be used as IDC、Cluster、Env 、namespace、and so on.
-	return kitexInstance
-}
-
-// ChangePolarisInstanceToKitexV2 transforms polaris instance to Kitex instance.
-func ChangePolarisInstanceToKitexV2(PolarisInstance model.Instance, polarisOptions Options) *polarisKitexInstance {
-	weight := PolarisInstance.GetWeight()
-	if weight <= 0 {
-		weight = DefaultWeight
-	}
-	addr := PolarisInstance.GetHost() + ":" + strconv.Itoa(int(PolarisInstance.GetPort()))
-
-	tags := map[string]string{
-		"namespace":  PolarisInstance.GetNamespace(),
-		"instanceId": PolarisInstance.GetId(),
+		NameSpaceKey:  PolarisInstance.GetNamespace(),
+		InstanceIDKey: PolarisInstance.GetId(),
 	}
 
 	kitexInstance := &polarisKitexInstance{
@@ -121,7 +107,6 @@ func ChangePolarisInstanceToKitexV2(PolarisInstance model.Instance, polarisOptio
 		polarisOptions:  polarisOptions,
 	}
 
-	// kitexInstance := discovery.NewInstance(PolarisInstance.GetProtocol(), addr, weight, tags)
 	// In KitexInstance , tags can be used as IDC、Cluster、Env 、namespace、and so on.
 	return kitexInstance
 }

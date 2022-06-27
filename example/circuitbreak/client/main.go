@@ -35,10 +35,8 @@ const (
 )
 
 func main() {
-	option := polaris.Options{
-		DstNamespace: Namespace,
-	}
-	r, err := polaris.NewPolarisResolverV2(option)
+	option := polaris.ClientOptions{}
+	r, err := polaris.NewPolarisResolver(option)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -48,12 +46,16 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// client.WithTag sets the destService tag for service discovery
+	suite := &polaris.ClientSuite{
+		DstNameSpace:       Namespace,
+		Resolver:           r,
+		Balancer:           pb,
+		ReportCallResultMW: polaris.NewUpdateServiceCallResultMW(),
+	}
+
 	newClient := hello.MustNewClient("polaris.circuitbreak.echo",
-		client.WithResolver(r),
+		client.WithSuite(suite),
 		client.WithRPCTimeout(time.Second*1),
-		client.WithMiddleware(polaris.NewUpdateServiceCallResultMW()),
-		client.WithLoadBalancer(pb),
 	)
 
 	for {

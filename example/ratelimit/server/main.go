@@ -55,7 +55,7 @@ func main() {
 	Info := &registry.Info{
 		ServiceName: "echo",
 		Tags: map[string]string{
-			"namespace": Namespace,
+			polaris.NameSpaceKey: Namespace,
 		},
 	}
 

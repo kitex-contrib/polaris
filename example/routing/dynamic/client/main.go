@@ -35,8 +35,7 @@ const (
 )
 
 func main() {
-	o := polaris.Options{
-		DstNamespace: Namespace,
+	o := polaris.ClientOptions{
 		DstMetadata:  nil,
 		SrcNamespace: "",
 		SrcService:   "",
@@ -44,7 +43,7 @@ func main() {
 			"test": "1",
 		},
 	}
-	r, err := polaris.NewPolarisResolverV2(o)
+	r, err := polaris.NewPolarisResolver(o)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -54,11 +53,15 @@ func main() {
 		log.Fatal(err)
 	}
 
+	suite := &polaris.ClientSuite{
+		DstNameSpace:       Namespace,
+		Resolver:           r,
+		Balancer:           pb,
+		ReportCallResultMW: polaris.NewUpdateServiceCallResultMW(),
+	}
+
 	newClient := hello.MustNewClient("polaris.routing.echo",
-		client.WithResolver(r),
-		client.WithRPCTimeout(time.Second*1),
-		client.WithLoadBalancer(pb),
-		client.WithMiddleware(polaris.NewUpdateServiceCallResultMW()),
+		client.WithSuite(suite),
 	)
 
 	for {

@@ -26,7 +26,7 @@ import (
 type polarisKitexInstance struct {
 	kitexInstance   discovery.Instance
 	polarisInstance model.Instance
-	polarisOptions  Options
+	polarisOptions  ClientOptions
 }
 
 func (i *polarisKitexInstance) Address() net.Addr {

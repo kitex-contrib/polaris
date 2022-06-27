@@ -54,7 +54,7 @@ func main() {
 	Info := &registry.Info{
 		ServiceName: "polaris.circuitbreak.echo",
 		Tags: map[string]string{
-			"namespace": Namespace,
+			polaris.NameSpaceKey: Namespace,
 		},
 	}
 	newServer := hello.NewServer(
