@@ -32,20 +32,17 @@ type ClientOptions struct {
 	SrcMetadata  map[string]string `json:"src_metadata"`
 }
 
-// ClientSuite client的一些配置信息
+// ClientSuite It is used to assemble multiple associated client's Options
 type ClientSuite struct {
-	DstNameSpace       string                   // 目标服务空间,用于服务发现
-	Resolver           discovery.Resolver       // 服务发现
-	Balancer           loadbalance.Loadbalancer // 负载均衡
-	ReportCallResultMW endpoint.Middleware      // 服务结果上报中间件,用于熔断
+	DstNameSpace       string                   // dest namespace for service discovery
+	Resolver           discovery.Resolver       // service discovery component
+	Balancer           loadbalance.Loadbalancer // load balancer
+	ReportCallResultMW endpoint.Middleware      // report service call result for circuitbreak
 }
 
 // Options implements the client.Suite interface.
 func (cs *ClientSuite) Options() []client.Option {
-	var (
-		// options
-		opts []client.Option
-	)
+	var opts []client.Option
 
 	if len(cs.DstNameSpace) < 0 {
 		cs.DstNameSpace = DefaultPolarisNamespace

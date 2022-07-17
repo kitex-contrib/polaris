@@ -30,7 +30,10 @@ import (
 	"golang.org/x/sync/singleflight"
 )
 
-var polarisPickerPool sync.Pool
+var (
+	polarisPickerPool sync.Pool
+	polarisPickerOnce sync.Once
+)
 
 func init() {
 	polarisPickerPool.New = newPolarisPicker
@@ -47,7 +50,9 @@ type polarisPicker struct {
 }
 
 func (pp *polarisPicker) Next(ctx context.Context, request interface{}) (ins discovery.Instance) {
-	if pp.routerInstancesResp == nil {
+	var routerInstancesResp *model.InstancesResponse
+	var needReturn bool
+	polarisPickerOnce.Do(func() {
 		routerRequest := &polarisgo.ProcessRoutersRequest{}
 		svcInfo := model.ServiceInfo{
 			Service:   pp.info.serviceName,
@@ -59,16 +64,20 @@ func (pp *polarisPicker) Next(ctx context.Context, request interface{}) (ins dis
 		routerRequest.SourceService.Namespace = pp.info.polarisOptions.SrcNamespace
 		routerRequest.SourceService.Metadata = pp.info.polarisOptions.SrcMetadata
 
-		routerInstancesResp, err := pp.routerAPI.ProcessRouters(routerRequest)
+		var err error
+		routerInstancesResp, err = pp.routerAPI.ProcessRouters(routerRequest)
 		if nil != err {
 			log.GetBaseLogger().Errorf("fail to do ProcessRouters err:%+v", err)
-			return nil
+			needReturn = true
 		}
 		if len(routerInstancesResp.GetInstances()) == 0 {
-			return nil
+			needReturn = true
 		}
-		pp.routerInstancesResp = routerInstancesResp
+	})
+	if needReturn {
+		return nil
 	}
+	pp.routerInstancesResp = routerInstancesResp
 
 	lbRequest := &polarisgo.ProcessLoadBalanceRequest{}
 	lbRequest.DstInstances = pp.routerInstancesResp

@@ -35,10 +35,7 @@ var (
 )
 
 const (
-	RetSuccessCode          = 0
-	RetFailCode             = -1
-	NameSpaceKey            = "namespace"
-	InstanceIDKey           = "instance_id"
+	NameSpaceTagKey         = "namespace"
 	DefaultPolarisNamespace = "default"
 	DstNameSpaceTagKey      = "dst_namespace"
 )
@@ -97,8 +94,7 @@ func ChangePolarisInstanceToKitex(PolarisInstance model.Instance, polarisOptions
 	addr := PolarisInstance.GetHost() + ":" + strconv.Itoa(int(PolarisInstance.GetPort()))
 
 	tags := map[string]string{
-		NameSpaceKey:  PolarisInstance.GetNamespace(),
-		InstanceIDKey: PolarisInstance.GetId(),
+		NameSpaceTagKey: PolarisInstance.GetNamespace(),
 	}
 
 	kitexInstance := &polarisKitexInstance{

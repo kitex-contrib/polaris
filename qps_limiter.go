@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package limiter
+package polaris
 
 import (
 	"context"
 	"time"
 
-	"github.com/kitex-contrib/polaris"
 	"github.com/polarismesh/polaris-go/api"
 	"github.com/polarismesh/polaris-go/pkg/log"
 )
@@ -34,7 +33,7 @@ type qpsLimiter struct {
 
 // NewQPSLimiter creates a new qpsLimiter.
 func NewQPSLimiter(configFile ...string) (*qpsLimiter, error) {
-	sdkCtx, err := polaris.GetPolarisConfig(configFile...)
+	sdkCtx, err := GetPolarisConfig(configFile...)
 	if err != nil {
 		return nil, err
 	}

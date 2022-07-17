@@ -47,7 +47,7 @@ func main() {
 		ReportCallResultMW: polaris.NewUpdateServiceCallResultMW(),
 	}
 
-	newClient := hello.MustNewClient("echo",
+	newClient := hello.MustNewClient("polaris.ratelimit.echo",
 		client.WithSuite(cs),
 	)
 

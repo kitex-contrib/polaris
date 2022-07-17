@@ -18,59 +18,59 @@ package polaris
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/cloudwego/kitex/pkg/endpoint"
-	"github.com/polarismesh/polaris-go/pkg/model"
-
 	"github.com/cloudwego/kitex/pkg/rpcinfo"
+	"github.com/cloudwego/kitex/pkg/rpcinfo/remoteinfo"
 	"github.com/polarismesh/polaris-go/api"
 )
 
+var (
+	callResultSdkCtx      api.SDKContext
+	callResultConsumerAPI api.ConsumerAPI
+	callResultOnce        sync.Once
+)
+
+const (
+	retSuccessCode = 0
+	retFailCode    = -1
+)
+
+// NewUpdateServiceCallResultMW report call result for circuitbreak
 func NewUpdateServiceCallResultMW(configFile ...string) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request, response interface{}) error {
-			retCode := int32(RetSuccessCode)
+			retCode := int32(retSuccessCode)
 			retStatus := api.RetSuccess
 			begin := time.Now()
 			kitexCallErr := next(ctx, request, response)
 			cost := time.Since(begin)
 			if kitexCallErr != nil {
-				retCode = RetFailCode
+				retCode = retFailCode
 				retStatus = api.RetFail
 			}
 
-			ri := rpcinfo.GetRPCInfo(ctx)
-			sdkCtx, err := GetPolarisConfig(configFile...)
+			var err error
+			callResultOnce.Do(func() {
+				callResultSdkCtx, err = GetPolarisConfig(configFile...)
+				callResultConsumerAPI = api.NewConsumerAPIByContext(callResultSdkCtx)
+			})
 			if err != nil {
 				return err
 			}
-			consumer := api.NewConsumerAPIByContext(sdkCtx)
-			ns, _ := ri.To().Tag(NameSpaceKey)
-			instanceId, ok := ri.To().Tag(InstanceIDKey)
-			if !ok {
-				// 没有找到实例
-				return kitexCallErr
-			}
 
-			req := api.InstanceRequest{
-				ServiceKey: model.ServiceKey{
-					Namespace: ns,
-					Service:   ri.To().ServiceName(),
-				},
-				InstanceID: instanceId,
-			}
+			svcCallResult := &api.ServiceCallResult{}
 
-			svcCallResult, reportErr := api.NewServiceCallResult(sdkCtx, req)
-			if reportErr != nil {
-				return reportErr
-			}
+			ri := rpcinfo.GetRPCInfo(ctx)
+			svcCallResult.CalledInstance = ri.To().(remoteinfo.RemoteInfo).GetInstance().(*polarisKitexInstance).polarisInstance
 
 			svcCallResult.SetRetCode(retCode)
 			svcCallResult.SetRetStatus(retStatus)
 			svcCallResult.SetDelay(cost)
 			// 执行调用结果上报
-			_ = consumer.UpdateServiceCallResult(svcCallResult)
+			_ = callResultConsumerAPI.UpdateServiceCallResult(svcCallResult)
 			return kitexCallErr
 		}
 	}

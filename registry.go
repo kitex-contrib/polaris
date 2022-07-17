@@ -40,7 +40,6 @@ var (
 // Registry is extension interface of Kitex registry.Registry.
 type Registry interface {
 	registry.Registry
-
 	doHeartbeat(ctx context.Context, ins *api.InstanceRegisterRequest)
 }
 
@@ -187,7 +186,7 @@ func createRegisterParam(info *registry.Info, so ServerOptions) (*api.InstanceRe
 	}
 	protocol := info.Addr.Network()
 
-	namespace, ok := info.Tags[NameSpaceKey]
+	namespace, ok := info.Tags[NameSpaceTagKey]
 	if !ok {
 		namespace = DefaultPolarisNamespace
 	}

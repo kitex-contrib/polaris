@@ -35,7 +35,6 @@ const (
 // Resolver is extension interface of Kitex discovery.Resolver.
 type Resolver interface {
 	discovery.Resolver
-
 	Watcher(ctx context.Context, desc string) (discovery.Change, error)
 }
 

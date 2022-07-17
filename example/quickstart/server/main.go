@@ -53,7 +53,7 @@ func main() {
 	Info := &registry.Info{
 		ServiceName: "polaris.quickstart.echo",
 		Tags: map[string]string{
-			polaris.NameSpaceKey: Namespace,
+			polaris.NameSpaceTagKey: Namespace,
 		},
 	}
 	newServer := hello.NewServer(

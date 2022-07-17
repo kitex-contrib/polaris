@@ -44,7 +44,6 @@ func (h *HelloImpl) Echo(ctx context.Context, req *api.Request) (resp *api.Respo
 	return resp, nil
 }
 
-// https://www.cloudwego.io/docs/kitex/tutorials/framework-exten/registry/#integrate-into-kitex
 func main() {
 	so := polaris.ServerOptions{
 		Metadata: map[string]string{
@@ -58,7 +57,7 @@ func main() {
 	Info := &registry.Info{
 		ServiceName: "polaris.routing.echo",
 		Tags: map[string]string{
-			polaris.NameSpaceKey: Namespace,
+			polaris.NameSpaceTagKey: Namespace,
 		},
 	}
 	newServer := hello.NewServer(

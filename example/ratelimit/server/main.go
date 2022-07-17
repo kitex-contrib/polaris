@@ -26,7 +26,6 @@ import (
 	"github.com/cloudwego/kitex/pkg/registry"
 	"github.com/cloudwego/kitex/server"
 	"github.com/kitex-contrib/polaris"
-	"github.com/kitex-contrib/polaris/limiter"
 )
 
 const (
@@ -45,26 +44,26 @@ func (h *HelloImpl) Echo(ctx context.Context, req *api.Request) (resp *api.Respo
 	return resp, nil
 }
 
-//  // https://www.cloudwego.io/docs/kitex/tutorials/framework-exten/registry/#integrate-into-kitex
 func main() {
 	so := polaris.ServerOptions{}
 	r, err := polaris.NewPolarisRegistry(so)
 	if err != nil {
 		log.Fatal(err)
 	}
+	svcName := "polaris.ratelimit.echo"
 	Info := &registry.Info{
-		ServiceName: "echo",
+		ServiceName: svcName,
 		Tags: map[string]string{
-			polaris.NameSpaceKey: Namespace,
+			polaris.NameSpaceTagKey: Namespace,
 		},
 	}
 
-	qpsLimiter, err := limiter.NewQPSLimiter()
+	qpsLimiter, err := polaris.NewQPSLimiter()
 	if err != nil {
 		log.Fatal(err)
 	}
 	qpsLimiter.WithNamespace(Namespace)
-	qpsLimiter.WithServiceName("echo")
+	qpsLimiter.WithServiceName(svcName)
 
 	newServer := hello.NewServer(
 		new(HelloImpl),

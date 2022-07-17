@@ -36,9 +36,6 @@ const (
 
 func main() {
 	o := polaris.ClientOptions{
-		DstMetadata:  nil,
-		SrcNamespace: "",
-		SrcService:   "",
 		SrcMetadata: map[string]string{
 			"test": "1",
 		},
