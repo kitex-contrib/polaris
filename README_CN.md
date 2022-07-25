@@ -1,24 +1,24 @@
-# polaris (This is a community driven project)
+# polaris（这是一个社区驱动的项目）
 
-[中文](https://github.com/kitex-contrib/polaris/blob/main/README_CN.md)
+[English](https://github.com/kitex-contrib/polaris/blob/main/README.md)
 
 [polaris](https://github.com/polarismesh/polaris) for [Kitex](https://github.com/cloudwego/kitex)
 
-# Feature
+# 特性
 
-## service discovery
-- [x] Support service registry and service discovery
+## 服务注册与发现
+- [x] 支持服务注册与发现
 
-## circuit breaker
-- [x] Support circuitbreak
+## 服务熔断
+- [x] 支持服务熔断
 
-## dynamic routing
-- [x] Support dynamic routing
+## 动态路由
+- [x] 支持动态路由
 
-## service rate limit
-- [x] Support service rate limit
+## 服务限流
+- [x] 支持限流
 
-# Server usage
+# 服务端使用示例
 ```go
 import (
 	"context"
@@ -71,7 +71,7 @@ func main() {
 }
 ```
 
-# Client usage
+# 客户端使用示例
 ```go
 import (
 	"context"
@@ -128,8 +128,6 @@ func main() {
 }
 ```
 
-# More info
+# 更多信息
 
-See example.
-
-
+参考example
