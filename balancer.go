@@ -23,6 +23,7 @@ import (
 
 	"github.com/cloudwego/kitex/pkg/discovery"
 	"github.com/cloudwego/kitex/pkg/loadbalance"
+	"github.com/cloudwego/kitex/pkg/rpcinfo"
 	polarisgo "github.com/polarismesh/polaris-go"
 	"github.com/polarismesh/polaris-go/pkg/config"
 	"github.com/polarismesh/polaris-go/pkg/log"
@@ -32,7 +33,6 @@ import (
 
 var (
 	polarisPickerPool sync.Pool
-	polarisPickerOnce sync.Once
 )
 
 func init() {
@@ -44,6 +44,7 @@ func newPolarisPicker() interface{} {
 }
 
 type polarisPicker struct {
+	once                sync.Once
 	routerAPI           polarisgo.RouterAPI
 	info                *polarisInfo
 	routerInstancesResp *model.InstancesResponse
@@ -52,17 +53,14 @@ type polarisPicker struct {
 func (pp *polarisPicker) Next(ctx context.Context, request interface{}) (ins discovery.Instance) {
 	var routerInstancesResp *model.InstancesResponse
 	var needReturn bool
-	polarisPickerOnce.Do(func() {
+	pp.once.Do(func() {
 		routerRequest := &polarisgo.ProcessRoutersRequest{}
-		svcInfo := model.ServiceInfo{
-			Service:   pp.info.serviceName,
-			Namespace: pp.info.namespace,
-			Metadata:  pp.info.polarisOptions.DstMetadata,
-		}
-		routerRequest.DstInstances = model.NewDefaultServiceInstances(svcInfo, pp.info.polarisInstances)
+		routerRequest.DstInstances = pp.info.cachedDstInstances
 		routerRequest.SourceService.Service = pp.info.polarisOptions.SrcService
 		routerRequest.SourceService.Namespace = pp.info.polarisOptions.SrcNamespace
 		routerRequest.SourceService.Metadata = pp.info.polarisOptions.SrcMetadata
+		ri := rpcinfo.GetRPCInfo(ctx)
+		routerRequest.Method = ri.To().Method()
 
 		var err error
 		routerInstancesResp, err = pp.routerAPI.ProcessRouters(routerRequest)
@@ -107,10 +105,11 @@ func (pp *polarisPicker) zero() {
 
 // polarisBalancer is a resolver using polaris.
 type polarisBalancer struct {
-	cachedPolarisInfo sync.Map
-	sfg               singleflight.Group
-	routerAPI         polarisgo.RouterAPI
-	polarisInstances  []model.Instance
+	cachedPolarisInfo   sync.Map
+	sfg                 singleflight.Group
+	routerAPI           polarisgo.RouterAPI
+	polarisInstances    []model.Instance
+	routerInstancesResp *model.InstancesResponse
 }
 
 func NewPolarisBalancer(configFile ...string) (loadbalance.Loadbalancer, error) {
@@ -132,6 +131,7 @@ type polarisInfo struct {
 	polarisInstanceMapKitexInstance map[string]discovery.Instance
 	polarisInstances                []model.Instance
 	polarisOptions                  ClientOptions
+	cachedDstInstances              model.ServiceInstances
 }
 
 func (pb *polarisBalancer) GetPicker(e discovery.Result) loadbalance.Picker {
@@ -196,5 +196,13 @@ func (pb *polarisBalancer) newPolarisInfo(e discovery.Result) *polarisInfo {
 	namespace, serviceName := SplitCachedKey(e.CacheKey)
 	pi.namespace = namespace
 	pi.serviceName = serviceName
+
+	svcInfo := model.ServiceInfo{
+		Service:   serviceName,
+		Namespace: namespace,
+		Metadata:  pi.polarisOptions.DstMetadata,
+	}
+	pi.cachedDstInstances = model.NewDefaultServiceInstances(svcInfo, pi.polarisInstances)
+
 	return pi
 }

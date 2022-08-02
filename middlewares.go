@@ -27,12 +27,6 @@ import (
 	"github.com/polarismesh/polaris-go/api"
 )
 
-var (
-	callResultSdkCtx      api.SDKContext
-	callResultConsumerAPI api.ConsumerAPI
-	callResultOnce        sync.Once
-)
-
 const (
 	retSuccessCode = 0
 	retFailCode    = -1
@@ -41,6 +35,21 @@ const (
 // NewUpdateServiceCallResultMW report call result for circuitbreak
 func NewUpdateServiceCallResultMW(configFile ...string) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		var (
+			callResultSdkCtx      api.SDKContext
+			callResultConsumerAPI api.ConsumerAPI
+			callResultOnce        sync.Once
+		)
+		var err error
+		callResultOnce.Do(func() {
+			callResultSdkCtx, err = GetPolarisConfig(configFile...)
+			callResultConsumerAPI = api.NewConsumerAPIByContext(callResultSdkCtx)
+		})
+		if err != nil {
+			return func(ctx context.Context, req, resp interface{}) (err error) {
+				return err
+			}
+		}
 		return func(ctx context.Context, request, response interface{}) error {
 			retCode := int32(retSuccessCode)
 			retStatus := api.RetSuccess
@@ -50,15 +59,6 @@ func NewUpdateServiceCallResultMW(configFile ...string) endpoint.Middleware {
 			if kitexCallErr != nil {
 				retCode = retFailCode
 				retStatus = api.RetFail
-			}
-
-			var err error
-			callResultOnce.Do(func() {
-				callResultSdkCtx, err = GetPolarisConfig(configFile...)
-				callResultConsumerAPI = api.NewConsumerAPIByContext(callResultSdkCtx)
-			})
-			if err != nil {
-				return err
 			}
 
 			svcCallResult := &api.ServiceCallResult{}
