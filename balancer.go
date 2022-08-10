@@ -44,16 +44,16 @@ func newPolarisPicker() interface{} {
 }
 
 type polarisPicker struct {
-	once                sync.Once
+	onceExecute         bool
 	routerAPI           polarisgo.RouterAPI
 	info                *polarisInfo
 	routerInstancesResp *model.InstancesResponse
 }
 
 func (pp *polarisPicker) Next(ctx context.Context, request interface{}) (ins discovery.Instance) {
-	var routerInstancesResp *model.InstancesResponse
-	var needReturn bool
-	pp.once.Do(func() {
+	if !pp.onceExecute {
+		pp.onceExecute = true
+
 		routerRequest := &polarisgo.ProcessRoutersRequest{}
 		routerRequest.DstInstances = pp.info.cachedDstInstances
 		routerRequest.SourceService.Service = pp.info.polarisOptions.SrcService
@@ -62,20 +62,19 @@ func (pp *polarisPicker) Next(ctx context.Context, request interface{}) (ins dis
 		ri := rpcinfo.GetRPCInfo(ctx)
 		routerRequest.Method = ri.To().Method()
 
+		var routerInstancesResp *model.InstancesResponse
 		var err error
 		routerInstancesResp, err = pp.routerAPI.ProcessRouters(routerRequest)
 		if nil != err {
 			log.GetBaseLogger().Errorf("fail to do ProcessRouters err:%+v", err)
-			needReturn = true
+			return nil
 		}
 		if len(routerInstancesResp.GetInstances()) == 0 {
-			needReturn = true
+			return nil
 		}
-	})
-	if needReturn {
-		return nil
+
+		pp.routerInstancesResp = routerInstancesResp
 	}
-	pp.routerInstancesResp = routerInstancesResp
 
 	lbRequest := &polarisgo.ProcessLoadBalanceRequest{}
 	lbRequest.DstInstances = pp.routerInstancesResp
