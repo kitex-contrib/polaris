@@ -100,6 +100,7 @@ func (pp *polarisPicker) zero() {
 	pp.info = nil
 	pp.routerAPI = nil
 	pp.routerInstancesResp = nil
+	pp.onceExecute = false
 }
 
 // polarisBalancer is a resolver using polaris.
