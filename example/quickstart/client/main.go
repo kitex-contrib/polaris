@@ -54,7 +54,7 @@ func main() {
 	}
 
 	newClient := hello.MustNewClient("polaris.quickstart.echo",
-		client.WithSuite(suite),
+		client.WithSuite(suite), // you can also use polaris.NewDefaultClientSuite() to replace suite
 		client.WithRPCTimeout(time.Second*360),
 	)
 

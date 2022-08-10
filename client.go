@@ -40,31 +40,48 @@ type ClientSuite struct {
 	ReportCallResultMW endpoint.Middleware      // report service call result for circuitbreak
 }
 
+func NewDefaultClientSuite() *ClientSuite {
+	return &ClientSuite{}
+}
+
 // Options implements the client.Suite interface.
 func (cs *ClientSuite) Options() []client.Option {
 	var opts []client.Option
 
-	if len(cs.DstNameSpace) < 0 {
+	if len(cs.DstNameSpace) <= 0 {
 		cs.DstNameSpace = DefaultPolarisNamespace
 	}
 	opts = append(opts, client.WithTag(DstNameSpaceTagKey, cs.DstNameSpace))
 
-	if cs.Resolver == nil {
+	var resolver discovery.Resolver
+	if cs.Resolver != nil {
+		resolver = cs.Resolver
+	} else {
 		o := ClientOptions{}
 		r, err := NewPolarisResolver(o)
 		if err != nil {
 			log.Fatal(err)
 		}
-		cs.Resolver = r
+		resolver = r
 	}
-	opts = append(opts, client.WithResolver(cs.Resolver))
+	opts = append(opts, client.WithResolver(resolver))
 
+	var lb loadbalance.Loadbalancer
 	if cs.Balancer != nil {
-		opts = append(opts, client.WithLoadBalancer(cs.Balancer))
+		lb = cs.Balancer
+	} else {
+		pb, err := NewPolarisBalancer()
+		if err != nil {
+			log.Fatal(err)
+		}
+		lb = pb
 	}
+	opts = append(opts, client.WithLoadBalancer(lb))
 
 	if cs.ReportCallResultMW != nil {
 		opts = append(opts, client.WithMiddleware(cs.ReportCallResultMW))
+	} else {
+		opts = append(opts, client.WithMiddleware(NewUpdateServiceCallResultMW()))
 	}
 
 	return opts

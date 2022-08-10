@@ -36,7 +36,7 @@ var (
 
 const (
 	NameSpaceTagKey         = "namespace"
-	DefaultPolarisNamespace = "default"
+	DefaultPolarisNamespace = "Polaris"
 	DstNameSpaceTagKey      = "dst_namespace"
 )
 

@@ -72,6 +72,41 @@ func main() {
 ```
 
 # 客户端使用示例
+- 提供了2种方式，可以通过suite快速开始，也可以自定义初始化各个组件开始
+
+## suite方式
+```go
+import (
+	"context"
+	"log"
+	"time"
+
+	"github.com/cloudwego/kitex-examples/hello/kitex_gen/api"
+	"github.com/cloudwego/kitex-examples/hello/kitex_gen/api/hello"
+	"github.com/cloudwego/kitex/client"
+	"github.com/kitex-contrib/polaris"
+)
+
+func main() {
+	newClient := hello.MustNewClient("polaris.quickstart.echo",
+		client.WithSuite(polaris.NewDefaultClientSuite()),
+		client.WithRPCTimeout(time.Second*360),
+	)
+
+	for {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*360)
+		resp, err := newClient.Echo(ctx, &api.Request{Message: "Hi,polaris!"})
+		cancel()
+		if err != nil {
+			log.Println(err)
+		}
+		log.Println(resp)
+		time.Sleep(1 * time.Second)
+	}
+}
+```
+
+## 自定义初始化各个组件方式
 ```go
 import (
 	"context"

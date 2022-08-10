@@ -72,6 +72,41 @@ func main() {
 ```
 
 # Client usage
+- Provides 2 ways, you can start quickly through the suite, or you can customize the initialization of each component to start
+
+## quickstart by suite
+```go
+import (
+	"context"
+	"log"
+	"time"
+
+	"github.com/cloudwego/kitex-examples/hello/kitex_gen/api"
+	"github.com/cloudwego/kitex-examples/hello/kitex_gen/api/hello"
+	"github.com/cloudwego/kitex/client"
+	"github.com/kitex-contrib/polaris"
+)
+
+func main() {
+	newClient := hello.MustNewClient("polaris.quickstart.echo",
+		client.WithSuite(polaris.NewDefaultClientSuite()),
+		client.WithRPCTimeout(time.Second*360),
+	)
+
+	for {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*360)
+		resp, err := newClient.Echo(ctx, &api.Request{Message: "Hi,polaris!"})
+		cancel()
+		if err != nil {
+			log.Println(err)
+		}
+		log.Println(resp)
+		time.Sleep(1 * time.Second)
+	}
+}
+```
+
+## quickstart by customize the initialization of each component
 ```go
 import (
 	"context"
