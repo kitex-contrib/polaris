@@ -27,34 +27,9 @@ import (
 	"github.com/kitex-contrib/polaris"
 )
 
-const (
-	Namespace = "Polaris"
-	// At present,polaris server tag is v1.4.0，can't support auto create namespace,
-	// if you want to use a namespace other than default,Polaris ,before you register an instance,
-	// you should create the namespace at polaris console first.
-)
-
 func main() {
-	o := polaris.ClientOptions{}
-	r, err := polaris.NewPolarisResolver(o)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	pb, err := polaris.NewPolarisBalancer()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	suite := &polaris.ClientSuite{
-		DstNameSpace:       Namespace,
-		Resolver:           r,
-		Balancer:           pb,
-		ReportCallResultMW: polaris.NewUpdateServiceCallResultMW(),
-	}
-
 	newClient := hello.MustNewClient("polaris.quickstart.echo",
-		client.WithSuite(suite), // you can also use polaris.NewDefaultClientSuite() to replace suite
+		client.WithSuite(polaris.NewDefaultClientSuite()), // you can also refer readme to customize the initialization of each component
 		client.WithRPCTimeout(time.Second*360),
 	)
 
