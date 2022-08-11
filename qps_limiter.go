@@ -24,7 +24,7 @@ import (
 	"github.com/polarismesh/polaris-go/pkg/log"
 )
 
-// qpsLimiter is a gRPC interceptor that implements rate limiting.
+// qpsLimiter implements the RateLimiter interface.
 type qpsLimiter struct {
 	namespace string
 	svcName   string
@@ -63,10 +63,7 @@ func (p *qpsLimiter) Acquire(ctx context.Context) bool {
 		return false
 	}
 	rsp := future.Get()
-	if rsp.Code != api.QuotaResultOk {
-		return false
-	}
-	return true
+	return rsp.Code == api.QuotaResultOk
 }
 
 func (p *qpsLimiter) Status(ctx context.Context) (max, current int, interval time.Duration) {
