@@ -31,9 +31,7 @@ import (
 	"golang.org/x/sync/singleflight"
 )
 
-var (
-	polarisPickerPool sync.Pool
-)
+var polarisPickerPool sync.Pool
 
 func init() {
 	polarisPickerPool.New = newPolarisPicker
