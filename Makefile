@@ -1,4 +1,4 @@
-polaris_version ?= v1.4.0
+polaris_version ?= v1.9.0
 
 prepare:
 	wget "https://github.com/polarismesh/polaris/releases/download/$(polaris_version)/polaris-server-release_$(polaris_version).linux.amd64.zip"
