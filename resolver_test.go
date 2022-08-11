@@ -59,11 +59,14 @@ func TestPolarisResolver(t *testing.T) {
 		CacheKey:  DefaultPolarisNamespace + ":" + serviceName,
 		Instances: []discovery.Instance{
 			discovery.NewInstance(InstanceOne.Addr.Network(), InstanceOne.Addr.String(), InstanceOne.Weight, map[string]string{
-				"namespace": "default",
+				"namespace": "Polaris",
 			}),
 		},
 	}
-	require.Equal(t, expected, result)
+	require.Equal(t, len(expected.Instances), len(result.Instances))
+	for i := 0; i < len(expected.Instances); i++ {
+		require.Equal(t, expected.Instances[i].Address(), result.Instances[i].Address())
+	}
 	watcherChange, err := rs.Watcher(context.TODO(), desc)
 	require.Nil(t, err)
 	t.Logf("the number of instance is %d", len(watcherChange.Result.Instances))
