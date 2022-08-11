@@ -50,7 +50,6 @@ type polarisHeartbeat struct {
 
 // polarisRegistry is a registry using polaris.
 type polarisRegistry struct {
-	consumer    api.ConsumerAPI
 	provider    api.ProviderAPI
 	lock        *sync.RWMutex
 	registryIns map[string]*polarisHeartbeat
@@ -65,7 +64,6 @@ func NewPolarisRegistry(so ServerOptions, configFile ...string) (Registry, error
 	}
 
 	pRegistry := &polarisRegistry{
-		consumer:    api.NewConsumerAPIByContext(sdkCtx),
 		provider:    api.NewProviderAPIByContext(sdkCtx),
 		registryIns: make(map[string]*polarisHeartbeat),
 		lock:        &sync.RWMutex{},
