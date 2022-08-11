@@ -28,6 +28,10 @@ jobs:
       - name: typos-action
         uses: crate-ci/typos@v1.2.1
 
+      - name: Prepare polaris-server
+        run: |
+          make prepare
+
       - name: Lint
         run: |
           go vet -stdmethods=false $(go list ./...)
