@@ -105,11 +105,9 @@ func (pp *polarisPicker) zero() {
 
 // polarisBalancer is a resolver using polaris.
 type polarisBalancer struct {
-	cachedPolarisInfo   sync.Map
-	sfg                 singleflight.Group
-	routerAPI           polarisgo.RouterAPI
-	polarisInstances    []model.Instance
-	routerInstancesResp *model.InstancesResponse
+	cachedPolarisInfo sync.Map
+	sfg               singleflight.Group
+	routerAPI         polarisgo.RouterAPI
 }
 
 func NewPolarisBalancer(configFile ...string) (loadbalance.Loadbalancer, error) {
